@@ -37,7 +37,8 @@ func main() {
 
 	bars := bw.NewBars(numBars)
 	bars.Spacing = 5
-	bars.BarMinSize = fyne.NewSize(40, 100)
+	bars.ShowPercentage = true
+	bars.BarMinSize = fyne.NewSize(20, 100)
 	bars.ColorFunc = mapColor
 
 	// update it with some data

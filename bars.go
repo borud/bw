@@ -19,20 +19,21 @@ type ColorFunc func(v float64) color.Color
 // Bars implements a simple bar chart widget
 type Bars struct {
 	widget.BaseWidget
-	numBars    int
-	mu         sync.RWMutex
-	values     []float64
-	BarMinSize fyne.Size
-	Spacing    float32
-	ColorFunc  ColorFunc
+	numBars        int
+	mu             sync.RWMutex
+	values         []float64
+	BarMinSize     fyne.Size
+	Spacing        float32
+	ColorFunc      ColorFunc
+	ShowPercentage bool
 }
 
 type barsRenderer struct {
-	bars    *Bars
-	labels  []*widget.Label
-	barFgs  []*canvas.Rectangle
-	barBgs  []*canvas.Rectangle
-	objects []fyne.CanvasObject
+	bars           *Bars
+	percentageText []*canvas.Text
+	barFgs         []*canvas.Rectangle
+	barBgs         []*canvas.Rectangle
+	objects        []fyne.CanvasObject
 }
 
 const (
@@ -75,20 +76,20 @@ func (b *Bars) Value(i int) float64 {
 // CreateRenderer returns a renderer for Bars
 func (b *Bars) CreateRenderer() fyne.WidgetRenderer {
 	r := &barsRenderer{
-		bars:   b,
-		labels: make([]*widget.Label, b.numBars),
-		barFgs: make([]*canvas.Rectangle, b.numBars),
-		barBgs: make([]*canvas.Rectangle, b.numBars),
+		bars:           b,
+		percentageText: make([]*canvas.Text, b.numBars),
+		barFgs:         make([]*canvas.Rectangle, b.numBars),
+		barBgs:         make([]*canvas.Rectangle, b.numBars),
 	}
 
 	for i := 0; i < b.numBars; i++ {
-		r.labels[i] = widget.NewLabel("XX")
-		r.labels[i].Alignment = fyne.TextAlignCenter
+		r.percentageText[i] = canvas.NewText("", theme.ForegroundColor())
+		r.percentageText[i].Alignment = fyne.TextAlignCenter
 
 		r.barBgs[i] = canvas.NewRectangle(theme.InputBackgroundColor())
 		r.barFgs[i] = canvas.NewRectangle(theme.PrimaryColor())
 
-		r.objects = append(r.objects, r.barBgs[i], r.barFgs[i], r.labels[i])
+		r.objects = append(r.objects, r.barBgs[i], r.barFgs[i], r.percentageText[i])
 	}
 	return r
 }
@@ -110,9 +111,16 @@ func (r *barsRenderer) Layout(size fyne.Size) {
 		r.barBgs[i].Move(fyne.NewPos(xpos, 0.0))
 		r.barFgs[i].Move(fyne.NewPos(xpos, size.Height-vsplit))
 
-		r.labels[i].SetText(fmt.Sprintf("%d%%", int(value*100)))
-		r.labels[i].Move(fyne.NewPos(xpos, size.Height/2))
-		r.labels[i].Resize(fyne.NewSize(barWidth, 10))
+		if r.bars.ShowPercentage {
+			r.percentageText[i].Show()
+			r.percentageText[i].Text = fmt.Sprintf("%3d%%", int(value*100))
+			r.percentageText[i].Resize(fyne.NewSize(barWidth, 0))
+			r.percentageText[i].TextSize = barWidth * 0.3
+			r.percentageText[i].Move(fyne.NewPos(xpos, (size.Height/2)-theme.Padding()))
+			r.percentageText[i].Refresh()
+		} else {
+			r.percentageText[i].Hide()
+		}
 
 		// Set custom color
 		if r.bars.ColorFunc != nil {
