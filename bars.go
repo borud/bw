@@ -1,7 +1,7 @@
-// Package bars contains a simple bargraph widget
 package bw
 
 import (
+	"image/color"
 	"sync"
 
 	"fyne.io/fyne/v2"
@@ -9,6 +9,11 @@ import (
 	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
 )
+
+// ColorFunc takes a value v in the range [0.0,1.0] and returns a color. You can
+// use this to render the color of the bar according to some scheme of your own
+// choosing.
+type ColorFunc func(v float64) color.Color
 
 // Bars implements a simple bar chart widget
 type Bars struct {
@@ -18,6 +23,7 @@ type Bars struct {
 	values     []float64
 	BarMinSize fyne.Size
 	Spacing    float32
+	ColorFunc  ColorFunc
 }
 
 type barsRenderer struct {
@@ -83,8 +89,9 @@ func (b *Bars) CreateRenderer() fyne.WidgetRenderer {
 
 func (r *barsRenderer) Layout(size fyne.Size) {
 	for i := 0; i < r.bars.numBars; i++ {
+		value := r.bars.Value(i)
 
-		vsplit := size.Height * float32(r.bars.Value(i))
+		vsplit := size.Height * float32(value)
 
 		barWidth := ((size.Width / float32(r.bars.numBars)) - r.bars.Spacing) + (r.bars.Spacing / float32(r.bars.numBars))
 
@@ -96,6 +103,11 @@ func (r *barsRenderer) Layout(size fyne.Size) {
 		xpos := (barWidth + r.bars.Spacing) * float32(i)
 		r.barBgs[i].Move(fyne.NewPos(xpos, 0.0))
 		r.barFgs[i].Move(fyne.NewPos(xpos, size.Height-vsplit))
+
+		// Set custom color
+		if r.bars.ColorFunc != nil {
+			r.barFgs[i].FillColor = r.bars.ColorFunc(value)
+		}
 	}
 }
 
