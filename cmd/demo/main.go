@@ -33,11 +33,11 @@ func main() {
 	app := app.New()
 	win := app.NewWindow("Demo")
 
-	numBars := 50
+	numBars := 20
 
 	bars := bw.NewBars(numBars)
 	bars.Spacing = 5
-	bars.BarMinSize = fyne.NewSize(15, 100)
+	bars.BarMinSize = fyne.NewSize(40, 100)
 	bars.ColorFunc = mapColor
 
 	// update it with some data

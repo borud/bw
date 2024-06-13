@@ -1,6 +1,7 @@
 package bw
 
 import (
+	"fmt"
 	"image/color"
 	"sync"
 
@@ -28,6 +29,7 @@ type Bars struct {
 
 type barsRenderer struct {
 	bars    *Bars
+	labels  []*widget.Label
 	barFgs  []*canvas.Rectangle
 	barBgs  []*canvas.Rectangle
 	objects []fyne.CanvasObject
@@ -74,15 +76,19 @@ func (b *Bars) Value(i int) float64 {
 func (b *Bars) CreateRenderer() fyne.WidgetRenderer {
 	r := &barsRenderer{
 		bars:   b,
+		labels: make([]*widget.Label, b.numBars),
 		barFgs: make([]*canvas.Rectangle, b.numBars),
 		barBgs: make([]*canvas.Rectangle, b.numBars),
 	}
 
 	for i := 0; i < b.numBars; i++ {
+		r.labels[i] = widget.NewLabel("XX")
+		r.labels[i].Alignment = fyne.TextAlignCenter
+
 		r.barBgs[i] = canvas.NewRectangle(theme.InputBackgroundColor())
 		r.barFgs[i] = canvas.NewRectangle(theme.PrimaryColor())
 
-		r.objects = append(r.objects, r.barBgs[i], r.barFgs[i])
+		r.objects = append(r.objects, r.barBgs[i], r.barFgs[i], r.labels[i])
 	}
 	return r
 }
@@ -103,6 +109,10 @@ func (r *barsRenderer) Layout(size fyne.Size) {
 		xpos := (barWidth + r.bars.Spacing) * float32(i)
 		r.barBgs[i].Move(fyne.NewPos(xpos, 0.0))
 		r.barFgs[i].Move(fyne.NewPos(xpos, size.Height-vsplit))
+
+		r.labels[i].SetText(fmt.Sprintf("%d%%", int(value*100)))
+		r.labels[i].Move(fyne.NewPos(xpos, size.Height/2))
+		r.labels[i].Resize(fyne.NewSize(barWidth, 10))
 
 		// Set custom color
 		if r.bars.ColorFunc != nil {
